@@ -14,10 +14,10 @@ minibatch_size = 500
 
 cam_a = os.path.join(dataset, 'cam_a')
 cam_b = os.path.join(dataset, 'cam_b')
-dump_image = lambda p, fh: imread(p).tofile(fh)
 
 a_path = lambda p: os.path.join(dataset, 'cam_a', p)
 b_path = lambda p: os.path.join(dataset, 'cam_b', p)
+split_channels = lambda a: np.array((a[:,:,0], a[:,:,1], a[:,:,2]))
 
 a_files = os.listdir(cam_a)
 b_files = os.listdir(cam_b)
@@ -30,8 +30,8 @@ random.seed()
 for index, a_file in enumerate(a_files):
     b_file = b_files[index]
 
-    a_array = imread(a_path(a_file))
-    b_array = imread(b_path(b_file))
+    a_array = split_channels(imread(a_path(a_file)))
+    b_array = split_channels(imread(b_path(b_file)))
     records.append((a_array, b_array, np.uint8(1)))
 
     a2_index = b2_index = index
@@ -39,9 +39,9 @@ for index, a_file in enumerate(a_files):
         a2_index = random.randint(0, len(a_files)-1)
         b2_index = random.randint(0, len(a_files)-1)
 
-    records.append((a_array, imread(a_path(a_files[a2_index])), np.uint8(0)))
-    records.append((a_array, imread(b_path(b_files[b2_index])), np.uint8(0)))
-    records.append((b_array, imread(b_path(b_files[b2_index])), np.uint8(0)))
+    records.append((a_array, split_channels(imread(a_path(a_files[a2_index]))), np.uint8(0)))
+    records.append((a_array, split_channels(imread(b_path(b_files[b2_index]))), np.uint8(0)))
+    records.append((b_array, split_channels(imread(b_path(b_files[b2_index]))), np.uint8(0)))
 
 random.shuffle(records)
 
