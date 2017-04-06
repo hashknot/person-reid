@@ -8,7 +8,9 @@ import sys
 from scipy.ndimage import imread
 
 dataset = sys.argv[1]
-output = sys.argv[2]
+outputdir = sys.argv[2]
+minibatches = 4
+minibatch_size = 500
 
 cam_a = os.path.join(dataset, 'cam_a')
 cam_b = os.path.join(dataset, 'cam_b')
@@ -23,15 +25,35 @@ b_files = os.listdir(cam_b)
 a_files.sort()
 b_files.sort()
 
-with open(output, 'wb') as fh:
-    for index, a_file in enumerate(a_files):
-        b_file = b_files[index]
+records = []
+random.seed()
+for index, a_file in enumerate(a_files):
+    b_file = b_files[index]
 
-        dump_image(a_path(a_file), fh)
-        dump_image(b_path(b_file), fh)
-        np.uint8(1).tofile(fh)          # label
+    a_array = imread(a_path(a_file))
+    b_array = imread(b_path(b_file))
+    records.append((a_array, b_array, np.uint8(1)))
 
-        b2_file = random.choice([f for i, f in enumerate(b_files) if i != index])
-        dump_image(a_path(a_file), fh)
-        dump_image(b_path(b2_file), fh)
-        np.uint8(0).tofile(fh)          # label
+    a2_index = b2_index = index
+    while (a2_index == b2_index == index):
+        a2_index = random.randint(0, len(a_files)-1)
+        b2_index = random.randint(0, len(a_files)-1)
+
+    records.append((a_array, imread(a_path(a_files[a2_index])), np.uint8(0)))
+    records.append((a_array, imread(b_path(b_files[b2_index])), np.uint8(0)))
+    records.append((b_array, imread(b_path(b_files[b2_index])), np.uint8(0)))
+
+random.shuffle(records)
+
+for i in xrange(minibatches):
+    outfile_path = os.path.join(outputdir, 'data_batch_{}.bin'.format(i+1))
+    with open(outfile_path, 'wb') as fh:
+        for j in xrange(i*minibatch_size, (i+1)*minibatch_size):
+            for r in records[j]:
+                r.tofile(fh)
+
+outfile_path = os.path.join(outputdir, 'data_test.bin')
+with open(outfile_path, 'wb') as fh:
+    for j in xrange((i+1)*minibatch_size, len(records)):
+        for r in records[j]:
+            r.tofile(fh)
