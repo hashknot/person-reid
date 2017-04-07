@@ -9,6 +9,7 @@ NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 2000
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 500
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 48
+NUM_CLASSES = 2
 
 def read(filename_queue):
     """
@@ -135,7 +136,7 @@ def inputs(eval_data, data_dir, batch_size):
                      for i in xrange(1, 4)]
         num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
     else:
-        filenames = [os.path.join(data_dir, 'test_batch.bin')]
+        filenames = [os.path.join(data_dir, 'data_test.bin')]
         num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
     for f in filenames:
