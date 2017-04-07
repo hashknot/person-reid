@@ -17,11 +17,6 @@
 
 import tensorflow as tf
 
-sess = tf.InteractiveSession()
-init_op = tf.global_variables_initializer()
-sess.run(init_op)
-
-
 def cross_difference(shape, a, b):
     (N, H, W, C) = shape
     kernel_size = 5
@@ -29,34 +24,43 @@ def cross_difference(shape, a, b):
     b_padded = tf.pad(b, [[0, 0], [2, 2], [2, 2], [0, 0]], "CONSTANT")
 
     i0 = tf.constant(0)
-    m0 = tf.ones([5, 5], dtype=a.dtype)
+    m0 = tf.ones([kernel_size, kernel_size], dtype=a.dtype)
     cond = lambda i, o: tf.less(i, N*H*W*C)
-    def body(i, o):
-        n = tf.floordiv(i, N)
-        h = tf.floordiv(i, H)
-        w = tf.floordiv(i, W)
-        c = tf.floordiv(i, C)
+
+    def body(i, out):
+        c = tf.mod(i, C)
+        remainder = tf.floordiv(i, C)
+
+        w = tf.mod(remainder, W)
+        remainder = tf.floordiv(remainder, W)
+
+        h = tf.mod(remainder, H)
+        remainder = tf.floordiv(remainder, H)
+
+        n = tf.mod(remainder, N)
+
         a_scalar = a[n, h, w, c]
         b_stride = tf.strided_slice(b_padded,
                                     [n, h, w, c],
                                     [n+1, h+kernel_size, w+kernel_size, c+1],
                                     [1, 1, 1, 1])
-        cross_diff = tf.reshape(tf.map_fn(lambda x: a_scalar - x, b_stride), [5, 5])
-        r = tf.concat([o, cross_diff], 0)
+        cross_diff = tf.reshape(tf.map_fn(lambda x: a_scalar - x, b_stride), [kernel_size, kernel_size])
+        out = tf.concat([out, cross_diff], 0)
         i = tf.add(i, 1)
-        return i, r
+        return i, out
 
-    i, r = tf.while_loop(cond,
-                         body,
-                         [i0, m0],
-                         [i0.get_shape(), tf.TensorShape([None, 5])])
+    _, out = tf.while_loop(cond,
+                           body,
+                           [i0, m0],
+                           [i0.get_shape(), tf.TensorShape([None, kernel_size])])
 
-    cross_diff = r[5:,:,]
+    cross_diff = out[kernel_size:,:,]
     cross_diff = tf.reshape(cross_diff, (N, H, W, C, kernel_size, kernel_size))
     cross_diff = tf.transpose(cross_diff, [0, 1, 4, 2, 5, 3])
     cross_diff = tf.reshape(cross_diff, (N, H*kernel_size, W*kernel_size, C))
     return cross_diff
 
+shape = (2, 3, 2, 2)
 w = tf.Variable([[[[1,2], [2,3]],
             [[3,5], [4,6]],
              [[5,7], [6,8]]],[[[7,9], [8,6]],
@@ -68,7 +72,10 @@ w2 = tf.Variable([[[[3,5], [2,3]],
              [[5,4], [6,5]]],[[[7,2], [8,0]],
             [[9,5], [10,4]],
              [[11,6], [12,9]]]])
+r = cross_difference(shape, w2, w)
 
+init_op = tf.global_variables_initializer()
+sess = tf.Session()
+sess.run(init_op)
 import pdb; pdb.set_trace()  # XXX BREAKPOINT
-shape = (2, 3, 2, 2)
-r = cross_difference(shape, w, w2)
+sess.run(r)
