@@ -51,7 +51,8 @@ def cross_difference(shape, a, b):
                          [i0, m0],
                          [i0.get_shape(), tf.TensorShape([None, 5])])
 
-    cross_diff = tf.reshape(r, (N, H, W, C, kernel_size, kernel_size))
+    cross_diff = r[5:,:,]
+    cross_diff = tf.reshape(cross_diff, (N, H, W, C, kernel_size, kernel_size))
     cross_diff = tf.transpose(cross_diff, [0, 1, 4, 2, 5, 3])
     cross_diff = tf.reshape(cross_diff, (N, H*kernel_size, W*kernel_size, C))
     return cross_diff
@@ -70,4 +71,4 @@ w2 = tf.Variable([[[[3,5], [2,3]],
 
 import pdb; pdb.set_trace()  # XXX BREAKPOINT
 shape = (2, 3, 2, 2)
-cross_difference(shape, w, w2)
+r = cross_difference(shape, w, w2)
