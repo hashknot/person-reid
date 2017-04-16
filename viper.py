@@ -25,7 +25,7 @@ from six.moves import urllib
 import tensorflow as tf
 
 import viper_input
-import cross_diff
+from cross_diff import cross_difference
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -207,14 +207,14 @@ def inference(images1, images2):
     l2_pool_a = tied_conv_max_pool(l1_pool_a, l2_tied_conv_kernel, l2_tied_conv_biases, 'l2_tied_conv_a', 'l2_tied_pool_a')
     l2_pool_b = tied_conv_max_pool(l1_pool_b, l2_tied_conv_kernel, l2_tied_conv_biases, 'l2_tied_conv_b', 'l2_tied_pool_b')
 
-    l3_cd_a = tf.nn.relu(cross_diff(l2_pool_a, l2_pool_b), 'l3_cd_a')
-    l3_cd_b = tf.nn.relu(cross_diff(l2_pool_b, l2_pool_a), 'l3_cd_b')
+    l3_cd_a = tf.nn.relu(cross_difference(l2_pool_a, l2_pool_b), 'l3_cd_a')
+    l3_cd_b = tf.nn.relu(cross_difference(l2_pool_b, l2_pool_a), 'l3_cd_b')
 
-    l4_conv_a = conv(l3_cd_a, [5, 5, 25], [1, 5, 5, 1], 'l4_conv_a')
-    l4_conv_b = conv(l3_cd_b, [5, 5, 25], [1, 5, 5, 1], 'l4_conv_b')
+    l4_conv_a = conv(l3_cd_a, [5, 5, 25, 25], [1, 5, 5, 1], 'l4_conv_a')
+    l4_conv_b = conv(l3_cd_b, [5, 5, 25, 25], [1, 5, 5, 1], 'l4_conv_b')
 
-    l5_conv_a = conv(l4_cd_a, [3, 3, 25], [1, 1, 1, 1], 'l5_conv_a')
-    l5_conv_b = conv(l4_cd_b, [3, 3, 25], [1, 1, 1, 1], 'l5_conv_b')
+    l5_conv_a = conv(l4_conv_a, [3, 3, 25, 25], [1, 1, 1, 1], 'l5_conv_a')
+    l5_conv_b = conv(l4_conv_b, [3, 3, 25, 25], [1, 1, 1, 1], 'l5_conv_b')
 
     l5 = tf.concat([l5_conv_a, l5_conv_b], 3)
 
@@ -226,7 +226,7 @@ def inference(images1, images2):
                                               stddev=0.04, wd=0.004)
         biases = _variable_on_cpu('biases', [500], tf.constant_initializer(0.1))
         l6 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
-        _activation_summary(l3)
+        _activation_summary(l6)
 
     # linear layer(WX + b),
     # We don't apply softmax here because
@@ -237,7 +237,7 @@ def inference(images1, images2):
                                             stddev=1/500.0, wd=0.0)
         biases = _variable_on_cpu('biases', [2],
                                   tf.constant_initializer(0.0))
-        softmax_linear = tf.add(tf.matmul(l7, weights), biases, name=scope.name)
+        softmax_linear = tf.add(tf.matmul(l6, weights), biases, name=scope.name)
         _activation_summary(softmax_linear)
 
     return softmax_linear

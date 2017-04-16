@@ -39,11 +39,11 @@ def train():
         global_step = tf.contrib.framework.get_or_create_global_step()
 
         # Get images and labels for VIPeR
-        images1, images2, labels = viper.inputs()
+        images1, images2, labels = viper.inputs(eval_data=False)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        logits = viper.inference(images)
+        logits = viper.inference(images1, images2)
 
         # Calculate loss.
         loss = viper.loss(logits, labels)
@@ -87,8 +87,8 @@ def train():
                    _LoggerHook()],
             config=tf.ConfigProto(
                 log_device_placement=FLAGS.log_device_placement)) as mon_sess:
-        while not mon_sess.should_stop():
-            mon_sess.run(train_op)
+            while not mon_sess.should_stop():
+                mon_sess.run(train_op)
 
 
 def main(argv=None):  # pylint: disable=unused-argument
