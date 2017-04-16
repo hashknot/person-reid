@@ -26,9 +26,9 @@ tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/viper_train',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('eval_interval_secs', 60 * 5,
                             """How often to run the eval.""")
-tf.app.flags.DEFINE_integer('num_examples', 10000,
+tf.app.flags.DEFINE_integer('num_examples', 50,
                             """Number of examples to run.""")
-tf.app.flags.DEFINE_boolean('run_once', False,
+tf.app.flags.DEFINE_boolean('run_once', True,
                             """Whether to run eval only once.""")
 
 
@@ -98,7 +98,7 @@ def evaluate():
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        logits = viper.inference(images)
+        logits = viper.inference(images1, images2)
 
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
