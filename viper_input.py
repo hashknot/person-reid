@@ -120,11 +120,11 @@ def _generate_image_and_label_batch(image1, image2, label, min_queue_examples,
 
 def inputs(eval_data, data_dir, batch_size):
     """
-    Construct input for CIFAR evaluation using the Reader ops.
+    Construct input for VIPeR evaluation using the Reader ops.
 
     Args:
         eval_data: bool, indicating if one should use the train or eval data set.
-        data_dir: Path to the CIFAR-10 data directory.
+        data_dir: Path to the VIPeR data directory.
         batch_size: Number of images per batch.
 
     Returns:

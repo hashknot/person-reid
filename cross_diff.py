@@ -17,8 +17,12 @@
 
 import tensorflow as tf
 
-def cross_difference(shape, a, b):
-    (N, H, W, C) = shape
+def shape(t):
+    s = t.get_shape()
+    return tuple([s[i].value for i in range(0, len(s))])
+
+def cross_difference(a, b):
+    (N, H, W, C) = shape(a)
     kernel_size = 5
 
     b_padded = tf.pad(b, [[0, 0], [2, 2], [2, 2], [0, 0]], "CONSTANT")
@@ -60,22 +64,27 @@ def cross_difference(shape, a, b):
     cross_diff = tf.reshape(cross_diff, (N, H*kernel_size, W*kernel_size, C))
     return cross_diff
 
-shape = (2, 3, 2, 2)
-w = tf.Variable([[[[1,2], [2,3]],
-            [[3,5], [4,6]],
-             [[5,7], [6,8]]],[[[7,9], [8,6]],
-            [[9,6], [10,1]],
-             [[1,15], [12,45]]]])
+# shape = (2, 3, 2, 2)
+# w = tf.Variable([[[[1,2], [2,3]],
+#             [[3,5], [4,6]],
+#              [[5,7], [6,8]]],[[[7,9], [8,6]],
+#             [[9,6], [10,1]],
+#              [[1,15], [12,45]]]])
+#
+# w2 = tf.Variable([[[[3,5], [2,3]],
+#             [[3,3], [4,3]],
+#              [[5,4], [6,5]]],[[[7,2], [8,0]],
+#             [[9,5], [10,4]],
+#              [[11,6], [12,9]]]])
 
-w2 = tf.Variable([[[[3,5], [2,3]],
-            [[3,3], [4,3]],
-             [[5,4], [6,5]]],[[[7,2], [8,0]],
-            [[9,5], [10,4]],
-             [[11,6], [12,9]]]])
-r = cross_difference(shape, w2, w)
-
-init_op = tf.global_variables_initializer()
-sess = tf.Session()
-sess.run(init_op)
-import pdb; pdb.set_trace()  # XXX BREAKPOINT
-sess.run(r)
+# w = tf.ones([128, 37, 12, 25])
+# w2 = tf.zeros([128, 37, 12, 25])
+#
+# r = cross_difference(w2, w)
+#
+#
+# init_op = tf.global_variables_initializer()
+# sess = tf.Session()
+# sess.run(init_op)
+# import pdb; pdb.set_trace()  # XXX BREAKPOINT
+# sess.run(r)
