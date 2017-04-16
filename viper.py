@@ -25,7 +25,7 @@ from six.moves import urllib
 import tensorflow as tf
 
 import viper_input
-from cross_diff import cross_difference
+from cross_diff import cross_difference, cross_difference2
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -207,8 +207,8 @@ def inference(images1, images2):
     l2_pool_a = tied_conv_max_pool(l1_pool_a, l2_tied_conv_kernel, l2_tied_conv_biases, 'l2_tied_conv_a', 'l2_tied_pool_a')
     l2_pool_b = tied_conv_max_pool(l1_pool_b, l2_tied_conv_kernel, l2_tied_conv_biases, 'l2_tied_conv_b', 'l2_tied_pool_b')
 
-    l3_cd_a = tf.nn.relu(cross_difference(l2_pool_a, l2_pool_b), 'l3_cd_a')
-    l3_cd_b = tf.nn.relu(cross_difference(l2_pool_b, l2_pool_a), 'l3_cd_b')
+    l3_cd_a = tf.nn.relu(cross_difference2(l2_pool_a, l2_pool_b), 'l3_cd_a')
+    l3_cd_b = tf.nn.relu(cross_difference2(l2_pool_b, l2_pool_a), 'l3_cd_b')
 
     l4_conv_a = conv(l3_cd_a, [5, 5, 25, 25], [1, 5, 5, 1], 'l4_conv_a')
     l4_conv_b = conv(l3_cd_b, [5, 5, 25, 25], [1, 5, 5, 1], 'l4_conv_b')
