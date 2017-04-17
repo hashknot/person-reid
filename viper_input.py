@@ -56,19 +56,17 @@ def read(filename_queue):
     # Convert from a string to a vector of uint8 that is record_bytes long.
     record_bytes = tf.decode_raw(value, tf.uint8)
 
-    # The remaining bytes after the label represent the image, which we reshape
-    # from [depth * height * width] to [depth, height, width].
     base = 0
     offset = image_bytes
-    depth_major = tf.reshape(tf.strided_slice(record_bytes, [base], [base+offset]),
-                            [result.depth, result.height, result.width])
+    depth_major = tf.reshape(tf.strided_slice(record_bytes, [base], [base + offset]),
+                             [result.depth, result.height, result.width])
     # Convert from [depth, height, width] to [height, width, depth].
     result.uint8image1 = tf.transpose(depth_major, [1, 2, 0])
 
     base += offset
     offset = image_bytes
     depth_major = tf.reshape(tf.strided_slice(record_bytes, [base], [base + offset]),
-                            [result.depth, result.height, result.width])
+                             [result.depth, result.height, result.width])
     result.uint8image2 = tf.transpose(depth_major, [1, 2, 0])
 
     base += offset

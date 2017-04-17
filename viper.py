@@ -161,9 +161,9 @@ def tied_conv_max_pool(activations, kernel, biases, conv_layer_name, pool_layer_
 def conv(activations, filter_shape, filter_stride, conv_layer_name):
     with tf.variable_scope(conv_layer_name) as scope:
         kernel = _variable_with_weight_decay(conv_layer_name + '_weights',
-                                            shape=filter_shape,
-                                            stddev=0.1,
-                                            wd=0.0)
+                                             shape=filter_shape,
+                                             stddev=0.1,
+                                             wd=0.0)
         biases = _variable_on_cpu(conv_layer_name + 'biases', filter_shape[-1], tf.constant_initializer(0.0))
         conv = tf.nn.conv2d(activations, kernel, filter_stride, padding='SAME')
         pre_activation = tf.nn.bias_add(conv, biases)
@@ -234,7 +234,7 @@ def inference(images1, images2):
     # and performs the softmax internally for efficiency.
     with tf.variable_scope('softmax_linear') as scope:
         weights = _variable_with_weight_decay('weights', [500, 2],
-                                            stddev=1/500.0, wd=0.0)
+                                              stddev=1/500.0, wd=0.0)
         biases = _variable_on_cpu('biases', [2],
                                   tf.constant_initializer(0.0))
         softmax_linear = tf.add(tf.matmul(l6, weights), biases, name=scope.name)
