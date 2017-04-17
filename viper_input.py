@@ -114,7 +114,7 @@ def _generate_image_and_label_batch(image1, image2, label, min_queue_examples,
 
     # Display the training images in the visualizer.
     tf.summary.image('images1', images1)
-    tf.summary.image('images2', images1)
+    tf.summary.image('images2', images2)
 
     return images1, images2, tf.reshape(label_batch, [batch_size])
 
