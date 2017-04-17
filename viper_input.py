@@ -9,7 +9,9 @@ NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 2000
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 500
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 48
+IMAGE_CHANNELS = 3
 NUM_CLASSES = 2
+LABEL_BYTES = 1
 
 def read(filename_queue):
     """
@@ -40,10 +42,10 @@ def read(filename_queue):
 
     result = Record()
 
-    label_bytes = 1
-    result.height = 128
-    result.width = 48
-    result.depth = 3
+    label_bytes = LABEL_BYTES
+    result.height = IMAGE_HEIGHT
+    result.width = IMAGE_WIDTH
+    result.depth = IMAGE_CHANNELS
     image_bytes = result.height * result.width * result.depth
 
     # Every record consists of two images followed by label, with a
@@ -151,14 +153,15 @@ def inputs(eval_data, data_dir, batch_size):
 
     height = IMAGE_HEIGHT
     width = IMAGE_WIDTH
+    channels = IMAGE_CHANNELS
 
     # Subtract off the mean and divide by the variance of the pixels.
     float_image1 = tf.image.per_image_standardization(image1)
     float_image2 = tf.image.per_image_standardization(image2)
 
     # Set the shapes of tensors.
-    float_image1.set_shape([height, width, 3])
-    float_image2.set_shape([height, width, 3])
+    float_image1.set_shape([height, width, channels])
+    float_image2.set_shape([height, width, channels])
     read_input.label.set_shape([1])
 
     # Ensure that the random shuffling has good mixing properties.

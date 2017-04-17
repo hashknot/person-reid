@@ -17,7 +17,7 @@ cam_b = os.path.join(dataset, 'cam_b')
 
 a_path = lambda p: os.path.join(dataset, 'cam_a', p)
 b_path = lambda p: os.path.join(dataset, 'cam_b', p)
-split_channels = lambda a: np.array((a[:,:,0], a[:,:,1], a[:,:,2]))
+split_channels = lambda x: np.array((x[:,:,0], x[:,:,1], x[:,:,2]))
 
 a_files = os.listdir(cam_a)
 b_files = os.listdir(cam_b)
@@ -54,6 +54,6 @@ for i in xrange(minibatches):
 
 outfile_path = os.path.join(outputdir, 'data_test.bin')
 with open(outfile_path, 'wb') as fh:
-    for j in xrange((i+1)*minibatch_size, len(records)):
+    for j in xrange(minibatches*minibatch_size, len(records)):
         for r in records[j]:
             r.tofile(fh)
