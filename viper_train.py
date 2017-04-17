@@ -20,7 +20,7 @@ import viper
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', '/tmp/viper_train',
+tf.app.flags.DEFINE_string('train_dir', 'out/viper_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 500,
