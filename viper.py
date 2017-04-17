@@ -30,7 +30,7 @@ from cross_diff import cross_difference, cross_difference2
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_integer('batch_size', 128,
+tf.app.flags.DEFINE_integer('batch_size', 100,
                             """Number of images to process in a batch.""")
 tf.app.flags.DEFINE_string('data_dir', 'data',
                            """Path to the data directory.""")

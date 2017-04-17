@@ -95,15 +95,15 @@ def cross_difference2(a, b):
     # a_upsample = tf.reshape(a_upsample, [N, C, H*kernel_size, W*kernel_size])
     # a_upsample = tf.transpose(a_upsample, [0, 2, 3, 1])
 
-    return a_upsample
-
-    idx = tf.reshape(foo, [-1, 1])
-    idx = tf.tile(idx, [1, 25])
-    idx = tf.reshape(idx, [h, w, 5, 5])
-
-    cross_diff = tf.reshape(out, (N, H, W, C, kernel_size, kernel_size))
-    cross_diff = tf.reshape(cross_diff, (N, H*kernel_size, W*kernel_size, C))
-    return cross_diff
+    # return a_upsample
+    #
+    # idx = tf.reshape(foo, [-1, 1])
+    # idx = tf.tile(idx, [1, 25])
+    # idx = tf.reshape(idx, [h, w, 5, 5])
+    #
+    # cross_diff = tf.reshape(out, (N, H, W, C, kernel_size, kernel_size))
+    # cross_diff = tf.reshape(cross_diff, (N, H*kernel_size, W*kernel_size, C))
+    # return cross_diff
 
 if __name__ == '__main__':
     w  = tf.Variable([[[[1.,2.], [2.,3.]],
