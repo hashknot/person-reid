@@ -16,6 +16,8 @@ import tensorflow as tf
 
 import viper
 
+import constants
+
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('eval_dir', 'out/viper_eval',
@@ -24,11 +26,11 @@ tf.app.flags.DEFINE_string('eval_data', 'test',
                            """Either 'test' or 'train_eval'.""")
 tf.app.flags.DEFINE_string('checkpoint_dir', 'out/viper_train',
                            """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('eval_interval_secs', 30,
+tf.app.flags.DEFINE_integer('eval_interval_secs', constants.EVAL_INTERVAL_SECS,
                             """How often to run the eval.""")
-tf.app.flags.DEFINE_integer('num_examples', 500,
+tf.app.flags.DEFINE_integer('num_examples', constants.EVAL_NUM_EXAMPLES,
                             """Number of examples to run.""")
-tf.app.flags.DEFINE_boolean('run_once', False,
+tf.app.flags.DEFINE_boolean('run_once', constants.EVAL_RUN_ONCE,
                             """Whether to run eval only once.""")
 
 
@@ -93,7 +95,8 @@ def evaluate():
     """
     with tf.Graph().as_default() as g:
         # Get images and labels for VIPeR.
-        images1, images2, labels = viper.inputs(eval_data=True)
+        eval_data = FLAGS.eval_data == 'test'
+        images1, images2, labels = viper.inputs(eval_data=eval_data)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.

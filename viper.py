@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import constants
 import os
 import re
 import sys
@@ -30,23 +31,22 @@ from cross_diff import cross_difference, cross_difference2
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_integer('batch_size', 100,
+tf.app.flags.DEFINE_integer('batch_size', constants.BATCH_SIZE,
                             """Number of images to process in a batch.""")
 tf.app.flags.DEFINE_string('data_dir', 'data',
                            """Path to the data directory.""")
-tf.app.flags.DEFINE_boolean('use_fp16', False,
+tf.app.flags.DEFINE_boolean('use_fp16', constants.USE_FP16,
                             """Train the model using fp16.""")
 
-NUM_CLASSES = viper_input.NUM_CLASSES
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = viper_input.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = viper_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
-
+NUM_CLASSES = constants.NUM_CLASSES
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = constants.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
+NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = constants.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
 # Constants describing the training process.
-MOVING_AVERAGE_DECAY = 0.9999     # The decay to use for the moving average.
-NUM_EPOCHS_PER_DECAY = 350.0      # Epochs after which learning rate decays.
-LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
-INITIAL_LEARNING_RATE = 0.001       # Initial learning rate.
+MOVING_AVERAGE_DECAY       = constants.MOVING_AVERAGE_DECAY
+NUM_EPOCHS_PER_DECAY       = constants.NUM_EPOCHS_PER_DECAY
+LEARNING_RATE_DECAY_FACTOR = constants.LEARNING_RATE_DECAY_FACTOR
+INITIAL_LEARNING_RATE      = constants.INITIAL_LEARNING_RATE
 
 # If a model is trained with multiple GPUs, prefix all Op names with tower_name
 # to differentiate the operations. Note that this prefix is removed from the

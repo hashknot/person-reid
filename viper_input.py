@@ -5,13 +5,7 @@ from __future__ import print_function
 import os
 import tensorflow as tf
 
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 2000
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 500
-IMAGE_HEIGHT = 128
-IMAGE_WIDTH = 48
-IMAGE_CHANNELS = 3
-NUM_CLASSES = 2
-LABEL_BYTES = 1
+import constants
 
 def read(filename_queue):
     """
@@ -42,10 +36,10 @@ def read(filename_queue):
 
     result = Record()
 
-    label_bytes = LABEL_BYTES
-    result.height = IMAGE_HEIGHT
-    result.width = IMAGE_WIDTH
-    result.depth = IMAGE_CHANNELS
+    label_bytes   = constants.LABEL_BYTES
+    result.height = constants.IMAGE_HEIGHT
+    result.width  = constants.IMAGE_WIDTH
+    result.depth  = constants.IMAGE_CHANNELS
     image_bytes = result.height * result.width * result.depth
 
     # Every record consists of two images followed by label, with a
@@ -134,10 +128,10 @@ def inputs(eval_data, data_dir, batch_size):
     if not eval_data:
         filenames = [os.path.join(data_dir, 'data_batch_%d.bin' % i)
                      for i in xrange(1, 4)]
-        num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
+        num_examples_per_epoch = constants.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
     else:
         filenames = [os.path.join(data_dir, 'data_test.bin')]
-        num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
+        num_examples_per_epoch = constants.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
     for f in filenames:
         if not tf.gfile.Exists(f):
@@ -151,9 +145,9 @@ def inputs(eval_data, data_dir, batch_size):
     image1 = tf.cast(read_input.uint8image1, tf.float32)
     image2 = tf.cast(read_input.uint8image2, tf.float32)
 
-    height = IMAGE_HEIGHT
-    width = IMAGE_WIDTH
-    channels = IMAGE_CHANNELS
+    height   = constants.IMAGE_HEIGHT
+    width    = constants.IMAGE_WIDTH
+    channels = constants.IMAGE_CHANNELS
 
     # Subtract off the mean and divide by the variance of the pixels.
     float_image1 = tf.image.per_image_standardization(image1)
