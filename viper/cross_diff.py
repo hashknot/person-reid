@@ -57,7 +57,7 @@ def cross_difference2(a, b):
     H = shape[1]
     W = shape[2]
     C = shape[3]
-    kernel_size = 5
+    kernel_size = 3
 
     a_resize = tf.image.resize_images(a, [H*kernel_size, W*kernel_size],
                                       method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)

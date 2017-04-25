@@ -190,31 +190,37 @@ def inference(images1, images2):
     # If we only ran this model on a single GPU, we could simplify this function
     # by replacing all instances of tf.get_variable() with tf.Variable().
 
+    shape = [5, 5, 3, 20]
     l1_kernel = _variable_with_weight_decay('layer1_weights',
-                                            shape=[5, 5, 3, 20],
+                                            shape=shape,
                                             stddev=0.1,
                                             wd=0.0)
-    l1_biases = _variable_on_cpu('layer1_biases', [20], tf.constant_initializer(0.0))
-    l1_a_pool = tied_conv_max_pool(images1, l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
-    l1_b_pool = tied_conv_max_pool(images2, l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
+    l1_biases = _variable_on_cpu('layer1_biases', [shape[-1]], tf.constant_initializer(0.0))
+    l1_a_pool = tied_conv_max_pool(tf.layers.batch_normalization(images1), l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
+    l1_b_pool = tied_conv_max_pool(tf.layers.batch_normalization(images2), l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
 
 
+    shape = [5, 5, 20, 25]
     l2_kernel = _variable_with_weight_decay('layer2_weights',
-                                            shape=[5, 5, 20, 25],
+                                            shape=shape,
                                             stddev=0.1,
                                             wd=0.0)
-    l2_biases = _variable_on_cpu('layer2_biases', [25], tf.constant_initializer(0.1))
+    l2_biases = _variable_on_cpu('layer2_biases', [shape[-1]], tf.constant_initializer(0.1))
     l2_a_pool = tied_conv_max_pool(l1_a_pool, l2_kernel, l2_biases, 'layer2_a_tied_conv', 'layer2_a_maxpool')
     l2_b_pool = tied_conv_max_pool(l1_b_pool, l2_kernel, l2_biases, 'layer2_b_tied_conv', 'layer2_b_maxpool')
 
     l3_a_cd = tf.nn.relu(cross_difference2(l2_a_pool, l2_b_pool), 'layer3_a_crossdiff')
     l3_b_cd = tf.nn.relu(cross_difference2(l2_b_pool, l2_a_pool), 'layer3_b_crossdiff')
 
-    l4_a_conv = conv(l3_a_cd, [5, 5, 25, 25], [1, 5, 5, 1], 'layer4_a_conv')
-    l4_b_conv = conv(l3_b_cd, [5, 5, 25, 25], [1, 5, 5, 1], 'layer4_b_conv')
+    shape = [5, 5, 25, 25]
+    stride = [1, 5, 5, 1]
+    l4_a_conv = tf.nn.dropout(conv(l3_a_cd, shape, stride, 'layer4_a_conv'), 0.5)
+    l4_b_conv = tf.nn.dropout(conv(l3_b_cd, shape, stride, 'layer4_b_conv'), 0.5)
 
-    l5_a_conv = conv(l4_a_conv, [3, 3, 25, 25], [1, 1, 1, 1], 'layer5_a_conv')
-    l5_b_conv = conv(l4_b_conv, [3, 3, 25, 25], [1, 1, 1, 1], 'layer5_b_conv')
+    shape = [3, 3, 25, 25]
+    stride = [1, 1, 1, 1]
+    l5_a_conv = tf.nn.dropout(conv(l4_a_conv, shape, stride, 'layer5_a_conv'), 0.5)
+    l5_b_conv = tf.nn.dropout(conv(l4_b_conv, shape, stride, 'layer5_b_conv'), 0.5)
 
     l5 = tf.concat([l5_a_conv, l5_b_conv], 3, name='layer5_concat')
 
@@ -222,11 +228,12 @@ def inference(images1, images2):
         # Move everything into depth so we can perform a single matrix multiply.
         reshape = tf.reshape(l5, [FLAGS.batch_size, -1], name='layer6_flatten')
         dim = reshape.get_shape()[1].value
+        shape = [dim, 500]
         weights = _variable_with_weight_decay('layer6_weights',
-                                              shape=[dim, 500],
+                                              shape=shape,
                                               stddev=0.04,
                                               wd=0.004)
-        biases = _variable_on_cpu('layer6_biases', [500], tf.constant_initializer(0.1))
+        biases = _variable_on_cpu('layer6_biases', [shape[-1]], tf.constant_initializer(0.1))
         l6 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
         _activation_summary(l6)
 
@@ -235,12 +242,13 @@ def inference(images1, images2):
     # tf.nn.sparse_softmax_cross_entropy_with_logits accepts the unscaled logits
     # and performs the softmax internally for efficiency.
     with tf.variable_scope('layer7_softmax') as scope:
+        shape = [500, 2]
         weights = _variable_with_weight_decay('layer7_weights',
-                                              [500, 2],
+                                              shape,
                                               stddev=1/500.0,
                                               wd=0.0)
         biases = _variable_on_cpu('layer7_biases',
-                                  [2],
+                                  [shape[-1]],
                                   tf.constant_initializer(0.0))
         softmax_linear = tf.add(tf.matmul(l6, weights), biases, name=scope.name)
         _activation_summary(softmax_linear)
@@ -332,7 +340,7 @@ def train(total_loss, global_step):
 
     # Compute gradients.
     with tf.control_dependencies([loss_averages_op]):
-        opt = tf.train.GradientDescentOptimizer(lr)
+        opt = tf.train.AdamOptimizer(lr)
         grads = opt.compute_gradients(total_loss)
 
     # Apply gradients.
