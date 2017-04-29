@@ -196,8 +196,10 @@ def inference(images1, images2):
                                             stddev=0.1,
                                             wd=0.0)
     l1_biases = _variable_on_cpu('layer1_biases', [shape[-1]], tf.constant_initializer(0.0))
-    l1_a_pool = tied_conv_max_pool(tf.layers.batch_normalization(images1), l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
-    l1_b_pool = tied_conv_max_pool(tf.layers.batch_normalization(images2), l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
+    l1_a_pool = tied_conv_max_pool(tf.layers.batch_normalization(images1, name='layer0_a_batchnorm'),
+                                   l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
+    l1_b_pool = tied_conv_max_pool(tf.layers.batch_normalization(images2, name='layer0_b_batchnorm'),
+                                   l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
 
 
     shape = [5, 5, 20, 25]
@@ -214,13 +216,13 @@ def inference(images1, images2):
 
     shape = [5, 5, 25, 25]
     stride = [1, 5, 5, 1]
-    l4_a_conv = tf.nn.dropout(conv(l3_a_cd, shape, stride, 'layer4_a_conv'), 0.5)
-    l4_b_conv = tf.nn.dropout(conv(l3_b_cd, shape, stride, 'layer4_b_conv'), 0.5)
+    l4_a_conv = tf.nn.dropout(conv(l3_a_cd, shape, stride, 'layer4_a_conv'), 0.5, name='layer4_a_dropout')
+    l4_b_conv = tf.nn.dropout(conv(l3_b_cd, shape, stride, 'layer4_b_conv'), 0.5, name='layer4_b_dropout')
 
     shape = [3, 3, 25, 25]
     stride = [1, 1, 1, 1]
-    l5_a_conv = tf.nn.dropout(conv(l4_a_conv, shape, stride, 'layer5_a_conv'), 0.5)
-    l5_b_conv = tf.nn.dropout(conv(l4_b_conv, shape, stride, 'layer5_b_conv'), 0.5)
+    l5_a_conv = tf.nn.dropout(conv(l4_a_conv, shape, stride, 'layer5_a_conv'), 0.5, name='layer5_a_dropout')
+    l5_b_conv = tf.nn.dropout(conv(l4_b_conv, shape, stride, 'layer5_b_conv'), 0.5, name='layer5_b_dropout')
 
     l5 = tf.concat([l5_a_conv, l5_b_conv], 3, name='layer5_concat')
 
@@ -237,10 +239,6 @@ def inference(images1, images2):
         l6 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
         _activation_summary(l6)
 
-    # linear layer(WX + b),
-    # We don't apply softmax here because
-    # tf.nn.sparse_softmax_cross_entropy_with_logits accepts the unscaled logits
-    # and performs the softmax internally for efficiency.
     with tf.variable_scope('layer7_softmax') as scope:
         shape = [500, 2]
         weights = _variable_with_weight_decay('layer7_weights',

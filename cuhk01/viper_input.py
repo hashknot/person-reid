@@ -127,7 +127,7 @@ def inputs(eval_data, data_dir, batch_size):
     """
     if not eval_data:
         filenames = [os.path.join(data_dir, 'data_batch_%d.bin' % i)
-                     for i in xrange(1, constants.BATCH_COUNT+1)]
+                     for i in xrange(1, constants.DATA_BATCH_COUNT+1)]
         num_examples_per_epoch = constants.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
     else:
         filenames = [os.path.join(data_dir, 'data_test.bin')]
