@@ -21,6 +21,8 @@ import tensorflow as tf
 import viper
 import constants
 
+import numpy as np
+
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('train_dir', 'out/viper_train',
@@ -38,7 +40,7 @@ def train():
     """
     Train VIPeR for a number of steps.
     """
-    with tf.Graph().as_default():
+    with tf.Graph().as_default() as g:
         global_step = tf.contrib.framework.get_or_create_global_step()
 
         # Get images and labels for VIPeR
@@ -53,7 +55,22 @@ def train():
 
         # Build a Graph that trains the model with one batch of examples and
         # updates the model parameters.
-        train_op = viper.train(loss, global_step)
+        train_no_accuracy_op = viper.train(loss, global_step)
+
+        def train_accuracy_op():
+            # Calculate predictions.
+            with tf.control_dependencies([train_no_accuracy_op]):
+                return (True, tf.nn.in_top_k(logits, labels, 1))
+
+        def cond_train_accuracy():
+            return tf.logical_and(
+                tf.greater(global_step, 0),
+                tf.equal(tf.truncatemod(global_step, constants.TRAIN_ACCURACY_FREQUENCY), 0)
+            )
+
+        train_op = tf.cond(cond_train_accuracy(),
+                           train_accuracy_op,
+                           lambda: (False, train_no_accuracy_op))
 
         class _LoggerHook(tf.train.SessionRunHook):
             """
@@ -83,6 +100,7 @@ def train():
                     print (format_str % (datetime.now(), self._step, loss_value,
                                          examples_per_sec, sec_per_batch))
 
+        summary_train_acc_writer = tf.summary.FileWriter(FLAGS.train_dir + '/train_accuracy')
         kwargs = {
             'checkpoint_dir': FLAGS.train_dir,
             'hooks': [tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
@@ -92,8 +110,15 @@ def train():
         }
         with tf.train.MonitoredTrainingSession(**kwargs) as mon_sess:
             while not mon_sess.should_stop():
-                mon_sess.run(train_op)
-
+                accuracy, results = mon_sess.run(train_op)
+                if accuracy:
+                    true_count = np.sum(results)
+                    accuracy = true_count / constants.BATCH_SIZE
+                    format_str = ('%s: Training Accuracy = %.3f')
+                    print (format_str % (datetime.now(), accuracy))
+                    summary = tf.Summary()
+                    summary.value.add(tag='train_accuracy', simple_value=accuracy)
+                    summary_train_acc_writer.add_summary(summary, mon_sess.run(global_step))
 
 def main(argv=None):  # pylint: disable=unused-argument
     if tf.gfile.Exists(FLAGS.train_dir):
