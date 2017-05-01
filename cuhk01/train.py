@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-A binary to train VIPeR using a single GPU.
-
-Accuracy:
-
-Speed: With batch_size 128.
-
-http://tensorflow.org/tutorials/deep_cnn/
-"""
+#
+# Based on TensorFlow CIFAR10 tutorial code
+#
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -18,14 +12,14 @@ import time
 
 import tensorflow as tf
 
-import viper
+import model
 import constants
 
 import numpy as np
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', 'out/viper_train',
+tf.app.flags.DEFINE_string('train_dir', 'out/train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', constants.MAX_STEPS,
@@ -37,25 +31,21 @@ tf.app.flags.DEFINE_integer('log_frequency', constants.LOG_FREQUENCY,
 
 
 def train():
-    """
-    Train VIPeR for a number of steps.
-    """
     with tf.Graph().as_default() as g:
         global_step = tf.contrib.framework.get_or_create_global_step()
 
-        # Get images and labels for VIPeR
-        images1, images2, labels = viper.inputs(eval_data=False)
+        images1, images2, labels = model.inputs(eval_data=False)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        logits = viper.inference(images1, images2)
+        logits = model.inference(images1, images2)
 
         # Calculate loss.
-        loss = viper.loss(logits, labels)
+        loss = model.loss(logits, labels)
 
         # Build a Graph that trains the model with one batch of examples and
         # updates the model parameters.
-        train_no_accuracy_op = viper.train(loss, global_step)
+        train_no_accuracy_op = model.train(loss, global_step)
 
         def train_accuracy_op():
             # Calculate predictions.
