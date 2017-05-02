@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 import numpy as np
 import os
@@ -8,7 +8,7 @@ import sys
 from scipy.ndimage import imread
 
 dataset = sys.argv[1]
-outputdir = sys.argv[2]
+outputdir = sys.argv[2] if len(sys.argv) >= 3 else 'data'
 minibatches = 10
 minibatch_size = 500
 

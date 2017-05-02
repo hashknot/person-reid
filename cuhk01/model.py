@@ -110,10 +110,8 @@ def inference(images1, images2):
                                             stddev=0.1,
                                             wd=0.0)
     l1_biases = _variable_on_cpu('layer1_biases', [shape[-1]], tf.constant_initializer(0.0))
-    l1_a_pool = tied_conv_max_pool(tf.layers.batch_normalization(images1, name='layer0_a_batchnorm'),
-                                   l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
-    l1_b_pool = tied_conv_max_pool(tf.layers.batch_normalization(images2, name='layer0_b_batchnorm'),
-                                   l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
+    l1_a_pool = tied_conv_max_pool(images1, l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
+    l1_b_pool = tied_conv_max_pool(images2, l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
 
 
     shape = [5, 5, 20, 25]
