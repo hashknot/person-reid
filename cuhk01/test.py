@@ -1,14 +1,17 @@
 #!/usr/bin/env python2.7
+# -*- coding: utf-8 -*-
 #
 # Based on TensorFlow CIFAR10 tutorial code
+# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10
 #
-# -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from datetime import datetime
+import sys
+import os
 import math
 import time
 
@@ -120,6 +123,18 @@ def test():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
+    if len(sys.argv) < 3:
+        print('Error: Data dir, out dir unspecified. \n\t ./test.py <data> <out> [--run-once]')
+        return 1
+    data_dir = sys.argv[1]
+    out_dir = sys.argv[2]
+    run_once = ('--run-once' == sys.argv[3]) if len(sys.argv) == 4 else False
+
+    FLAGS.data_dir = data_dir
+    FLAGS.test_dir = os.path.join(out_dir, 'test')
+    FLAGS.checkpoint_dir = os.path.join(out_dir, 'train')
+    FLAGS.run_once = run_once
+
     if tf.gfile.Exists(FLAGS.eval_dir):
         tf.gfile.DeleteRecursively(FLAGS.eval_dir)
     tf.gfile.MakeDirs(FLAGS.eval_dir)

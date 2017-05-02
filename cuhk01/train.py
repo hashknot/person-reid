@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Based on TensorFlow CIFAR10 tutorial code
+# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10
 #
 from __future__ import absolute_import
 from __future__ import division
@@ -9,6 +10,8 @@ from __future__ import print_function
 
 from datetime import datetime
 import time
+import os
+import sys
 
 import tensorflow as tf
 
@@ -111,6 +114,14 @@ def train():
                     summary_train_acc_writer.add_summary(summary, mon_sess.run(global_step))
 
 def main(argv=None):  # pylint: disable=unused-argument
+    if len(sys.argv) < 3:
+        print('Error: Data dir, out dir unspecified. \n\t ./train.py <data> <out>')
+        return 1
+    data_dir = sys.argv[1]
+    out_dir = sys.argv[2]
+    FLAGS.data_dir = data_dir
+    FLAGS.train_dir = os.path.join(out_dir, 'train')
+
     if tf.gfile.Exists(FLAGS.train_dir):
         tf.gfile.DeleteRecursively(FLAGS.train_dir)
     tf.gfile.MakeDirs(FLAGS.train_dir)

@@ -1,5 +1,6 @@
 #
 # Based on TensorFlow CIFAR10 tutorial code
+# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10
 #
 from __future__ import absolute_import
 from __future__ import division
