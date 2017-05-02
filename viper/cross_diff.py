@@ -1,25 +1,4 @@
-# import tensorflow as tf
-#
-#
-# foo = tf.Variable([[1,2], [3,4]])
-# sess = tf.InteractiveSession()
-#
-# init_op = tf.global_variables_initializer()
-# sess.run(init_op)
-#
-# # import pdb; pdb.set_trace()  # XXX BREAKPOINT
-# # h, w = sess.run(tf.shape(foo))
-# # idx = tf.reshape(foo, [-1, 1])
-# # idx = tf.tile(idx, [1, 25])
-# # idx = tf.reshape(idx, [h, w, 5, 5])
-# #
-# # sess.run(idx)
-
 import tensorflow as tf
-
-def shape(t):
-    s = t.get_shape()
-    return tuple([s[i].value for i in range(0, len(s))])
 
 def get_conv_img(t, ksize):
     shape = t.get_shape().as_list()
@@ -78,9 +57,6 @@ if __name__ == '__main__':
                                             [[9.,5.], [1.,4.]],
                                             [[1.,6.], [1.,9.]]]
                       ])
-
-    # w = tf.ones([128, 37, 12, 25])
-    # w2 = tf.zeros([128, 37, 12, 25])
 
     r = cross_difference(w2, w)
 

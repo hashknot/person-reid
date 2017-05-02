@@ -1,32 +1,34 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-"""
-Evaluation for VIPeR.
+#
+# Based on TensorFlow CIFAR10 tutorial code
+# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10
+#
 
-http://tensorflow.org/tutorials/deep_cnn/
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from datetime import datetime
+import sys
+import os
 import math
 import time
 
 import numpy as np
 import tensorflow as tf
 
-import viper
+import model
 
 import constants
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('eval_dir', 'out/viper_eval',
+tf.app.flags.DEFINE_string('eval_dir', 'out/test',
                            """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_data', 'test',
                            """Either 'test' or 'train_eval'.""")
-tf.app.flags.DEFINE_string('checkpoint_dir', 'out/viper_train',
+tf.app.flags.DEFINE_string('checkpoint_dir', 'out/train',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('eval_interval_secs', constants.EVAL_INTERVAL_SECS,
                             """How often to run the eval.""")
@@ -76,13 +78,12 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
                 true_count += np.sum(predictions)
                 step += 1
 
-            # Compute precision @ 1.
-            precision = true_count / total_sample_count
-            print('%s: precision @ 1 = %.3f' % (datetime.now(), precision))
+            accuracy = true_count / total_sample_count
+            print('%s: Test Accuracy = %.3f' % (datetime.now(), accuracy))
 
             summary = tf.Summary()
             summary.ParseFromString(sess.run(summary_op))
-            summary.value.add(tag='Precision @ 1', simple_value=precision)
+            summary.value.add(tag='test_accuracy', simple_value=accuracy)
             summary_writer.add_summary(summary, global_step)
         except Exception as e:  # pylint: disable=broad-except
             coord.request_stop(e)
@@ -91,25 +92,21 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
         coord.join(threads, stop_grace_period_secs=10)
 
 
-def evaluate():
-    """
-    Eval VIPeR for a number of steps.
-    """
+def test():
     with tf.Graph().as_default() as g:
-        # Get images and labels for VIPeR.
         eval_data = FLAGS.eval_data == 'test'
-        images1, images2, labels = viper.inputs(eval_data=eval_data)
+        images1, images2, labels = model.inputs(eval_data=eval_data)
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        logits = viper.inference(images1, images2)
+        logits = model.inference(images1, images2)
 
         # Calculate predictions.
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
 
         # Restore the moving average version of the learned variables for eval.
         variable_averages = tf.train.ExponentialMovingAverage(
-            viper.MOVING_AVERAGE_DECAY)
+            model.MOVING_AVERAGE_DECAY)
         variables_to_restore = variable_averages.variables_to_restore()
         saver = tf.train.Saver(variables_to_restore)
 
@@ -126,10 +123,22 @@ def evaluate():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
+    if len(sys.argv) < 3:
+        print('Error: Data dir, out dir unspecified. \n\t ./test.py <data> <out> [--run-once]')
+        return 1
+    data_dir = sys.argv[1]
+    out_dir = sys.argv[2]
+    run_once = ('--run-once' == sys.argv[3]) if len(sys.argv) == 4 else False
+
+    FLAGS.data_dir = data_dir
+    FLAGS.test_dir = os.path.join(out_dir, 'test')
+    FLAGS.checkpoint_dir = os.path.join(out_dir, 'train')
+    FLAGS.run_once = run_once
+
     if tf.gfile.Exists(FLAGS.eval_dir):
         tf.gfile.DeleteRecursively(FLAGS.eval_dir)
     tf.gfile.MakeDirs(FLAGS.eval_dir)
-    evaluate()
+    test()
 
 
 if __name__ == '__main__':

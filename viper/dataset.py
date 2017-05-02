@@ -1,3 +1,7 @@
+#
+# Based on TensorFlow CIFAR10 tutorial code
+# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10
+#
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -8,29 +12,6 @@ import tensorflow as tf
 import constants
 
 def read(filename_queue):
-    """
-    Reads and parses examples from  data files.
-
-    Recommendation: if you want N-way read parallelism, call this function
-    N times.  This will give you N independent Readers reading different
-    files & positions within those files, which will give better mixing of
-    examples.
-
-    Args:
-        filename_queue: A queue of strings with the filenames to read from.
-
-    Returns:
-        An object representing a single example, with the following fields:
-            height: number of rows in the result (32)
-            width: number of columns in the result (32)
-            depth: number of color channels in the result (3)
-            key: a scalar string Tensor describing the filename & record number
-            for this example.
-            label: an uint32 Tensor with the label in the range 0..1.
-            uint8image1: a [height, width, depth] uint8 Tensor with the image data
-            uint8image2: a [height, width, depth] uint8 Tensor with the image data
-    """
-
     class Record(object):
         pass
 
@@ -71,24 +52,8 @@ def read(filename_queue):
 
     return result
 
-def _generate_image_and_label_batch(image1, image2, label, min_queue_examples,
-                                    batch_size, shuffle):
-    """
-    Construct a queued batch of images and labels.
-
-    Args:
-        image1: 3-D Tensor of [height, width, 3] of type.float32.
-        image2: 3-D Tensor of [height, width, 3] of type.float32.
-        label: 1-D Tensor of type.uint8
-        min_queue_examples: int32, minimum number of samples to retain
-            in the queue that provides of batches of examples.
-        batch_size: Number of images per batch.
-        shuffle: boolean indicating whether to use a shuffling queue.
-
-    Returns:
-        images: Images. 4D tensor of [batch_size, height, width, 3] size.
-        labels: Labels. 1D tensor of [batch_size] size.
-    """
+def _generate_batch(image1, image2, label, min_queue_examples,
+                    batch_size, shuffle):
     # Create a queue that shuffles the examples, and then
     # read 'batch_size' images + labels from the example queue.
     num_preprocess_threads = 16
@@ -113,21 +78,9 @@ def _generate_image_and_label_batch(image1, image2, label, min_queue_examples,
     return images1, images2, tf.reshape(label_batch, [batch_size])
 
 def inputs(eval_data, data_dir, batch_size):
-    """
-    Construct input for VIPeR evaluation using the Reader ops.
-
-    Args:
-        eval_data: bool, indicating if one should use the train or eval data set.
-        data_dir: Path to the VIPeR data directory.
-        batch_size: Number of images per batch.
-
-    Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
-        labels: Labels. 1D tensor of [batch_size] size.
-    """
     if not eval_data:
         filenames = [os.path.join(data_dir, 'data_batch_%d.bin' % i)
-                     for i in xrange(1, 4)]
+                     for i in xrange(1, constants.DATA_BATCH_COUNT+1)]
         num_examples_per_epoch = constants.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
     else:
         filenames = [os.path.join(data_dir, 'data_test.bin')]
@@ -163,7 +116,6 @@ def inputs(eval_data, data_dir, batch_size):
     min_queue_examples = int(num_examples_per_epoch *
                              min_fraction_of_examples_in_queue)
 
-    # Generate a batch of images and labels by building up a queue of examples.
-    return _generate_image_and_label_batch(float_image1, float_image2, read_input.label,
-                                           min_queue_examples, batch_size,
-                                           shuffle=False)
+    return _generate_batch(float_image1, float_image2, read_input.label,
+                           min_queue_examples, batch_size,
+                           shuffle=False)

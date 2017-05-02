@@ -1,18 +1,7 @@
-"""
-
-Summary of available functions:
-
- # Compute inference on the model inputs to make a prediction.
- predictions = inference(inputs)
-
- # Compute the total loss of the prediction with respect to the labels.
- loss = loss(predictions, labels)
-
- # Create a graph to run one step of training with respect to the loss.
- train_op = train(loss, global_step)
-
-"""
-# pylint: disable=missing-docstring
+#
+# Based on TensorFlow CIFAR10 tutorial code
+# https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10
+#
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -25,7 +14,7 @@ import sys
 from six.moves import urllib
 import tensorflow as tf
 
-import viper_input
+import dataset
 from cross_diff import cross_difference, cross_difference2
 
 FLAGS = tf.app.flags.FLAGS
@@ -48,42 +37,15 @@ NUM_EPOCHS_PER_DECAY       = constants.NUM_EPOCHS_PER_DECAY
 LEARNING_RATE_DECAY_FACTOR = constants.LEARNING_RATE_DECAY_FACTOR
 INITIAL_LEARNING_RATE      = constants.INITIAL_LEARNING_RATE
 
-# If a model is trained with multiple GPUs, prefix all Op names with tower_name
-# to differentiate the operations. Note that this prefix is removed from the
-# names of the summaries when visualizing a model.
 TOWER_NAME = 'tower'
 
 def _activation_summary(x):
-    """
-    Helper to create summaries for activations.
-
-    Creates a summary that provides a histogram of activations.
-    Creates a summary that measures the sparsity of activations.
-
-    Args:
-        x: Tensor
-    Returns:
-        nothing
-    """
-    # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
-    # session. This helps the clarity of presentation on tensorboard.
     tensor_name = re.sub('%s_[0-9]*/' % TOWER_NAME, '', x.op.name)
     tf.summary.histogram(tensor_name + '/activations', x)
     tf.summary.scalar(tensor_name + '/sparsity',
                       tf.nn.zero_fraction(x))
 
 def _variable_on_cpu(name, shape, initializer):
-    """
-    Helper to create a Variable stored on CPU memory.
-
-    Args:
-        name: name of the variable
-        shape: list of ints
-        initializer: initializer for Variable
-
-    Returns:
-        Variable Tensor
-    """
     with tf.device('/cpu:0'):
         dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
         var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
@@ -91,22 +53,6 @@ def _variable_on_cpu(name, shape, initializer):
 
 
 def _variable_with_weight_decay(name, shape, stddev, wd):
-    """
-    Helper to create an initialized Variable with weight decay.
-
-    Note that the Variable is initialized with a truncated normal distribution.
-    A weight decay is added only if one is specified.
-
-    Args:
-        name: name of the variable
-        shape: list of ints
-        stddev: standard deviation of a truncated Gaussian
-        wd: add L2Loss weight decay multiplied by this float. If None, weight
-            decay is not added for this Variable.
-
-    Returns:
-        Variable Tensor
-    """
     dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
     var = _variable_on_cpu(name,
         shape,
@@ -118,26 +64,12 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
 
 
 def inputs(eval_data):
-    """
-    Construct input for evaluation using the Reader ops.
-
-    Args:
-        eval_data: bool, indicating if one should use the train or eval data set.
-
-    Returns:
-        images1: Images. 4D tensor of [batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, 3] size.
-        images2: Images. 4D tensor of [batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, 3] size.
-        labels:  Labels. 1D tensor of [batch_size] size.
-
-    Raises:
-        ValueError: If no data_dir
-    """
     if not FLAGS.data_dir:
         raise ValueError('Please supply a data_dir')
     data_dir = FLAGS.data_dir
-    images1, images2, labels = viper_input.inputs(eval_data=eval_data,
-                                                  data_dir=data_dir,
-                                                  batch_size=FLAGS.batch_size)
+    images1, images2, labels = dataset.inputs(eval_data=eval_data,
+                                              data_dir=data_dir,
+                                              batch_size=FLAGS.batch_size)
     if FLAGS.use_fp16:
         images1 = tf.cast(images1, tf.float16)
         images2 = tf.cast(images2, tf.float16)
@@ -169,35 +101,18 @@ def conv(activations, filter_shape, filter_stride, conv_layer_name):
         pre_activation = tf.nn.bias_add(conv, biases)
         conv = tf.nn.relu(pre_activation, name=conv_layer_name)
         _activation_summary(conv)
-
-    # pool = tf.nn.max_pool(conv, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
-    #                       padding='SAME', name=pool_layer_name)
     return conv
 
 
 def inference(images1, images2):
-    """
-    Build the VIPeR model.
-
-    Args:
-        images1, images2: Images returned from inputs().
-
-    Returns:
-        Logits.
-    """
-    # We instantiate all variables using tf.get_variable() instead of
-    # tf.Variable() in order to share variables across multiple GPU training runs.
-    # If we only ran this model on a single GPU, we could simplify this function
-    # by replacing all instances of tf.get_variable() with tf.Variable().
-
     shape = [5, 5, 3, 20]
     l1_kernel = _variable_with_weight_decay('layer1_weights',
                                             shape=shape,
                                             stddev=0.1,
                                             wd=0.0)
     l1_biases = _variable_on_cpu('layer1_biases', [shape[-1]], tf.constant_initializer(0.0))
-    l1_a_pool = tied_conv_max_pool(tf.layers.batch_normalization(images1), l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
-    l1_b_pool = tied_conv_max_pool(tf.layers.batch_normalization(images2), l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
+    l1_a_pool = tied_conv_max_pool(images1, l1_kernel, l1_biases, 'layer1_a_tied_conv', 'layer1_a_maxpool')
+    l1_b_pool = tied_conv_max_pool(images2, l1_kernel, l1_biases, 'layer1_b_tied_conv', 'layer1_b_maxpool')
 
 
     shape = [5, 5, 20, 25]
@@ -214,13 +129,13 @@ def inference(images1, images2):
 
     shape = [5, 5, 25, 25]
     stride = [1, 5, 5, 1]
-    l4_a_conv = tf.nn.dropout(conv(l3_a_cd, shape, stride, 'layer4_a_conv'), 0.5)
-    l4_b_conv = tf.nn.dropout(conv(l3_b_cd, shape, stride, 'layer4_b_conv'), 0.5)
+    l4_a_conv = tf.nn.dropout(conv(l3_a_cd, shape, stride, 'layer4_a_conv'), 0.5, name='layer4_a_dropout')
+    l4_b_conv = tf.nn.dropout(conv(l3_b_cd, shape, stride, 'layer4_b_conv'), 0.5, name='layer4_b_dropout')
 
     shape = [3, 3, 25, 25]
     stride = [1, 1, 1, 1]
-    l5_a_conv = tf.nn.dropout(conv(l4_a_conv, shape, stride, 'layer5_a_conv'), 0.5)
-    l5_b_conv = tf.nn.dropout(conv(l4_b_conv, shape, stride, 'layer5_b_conv'), 0.5)
+    l5_a_conv = tf.nn.dropout(conv(l4_a_conv, shape, stride, 'layer5_a_conv'), 0.5, name='layer5_a_dropout')
+    l5_b_conv = tf.nn.dropout(conv(l4_b_conv, shape, stride, 'layer5_b_conv'), 0.5, name='layer5_b_dropout')
 
     l5 = tf.concat([l5_a_conv, l5_b_conv], 3, name='layer5_concat')
 
@@ -237,10 +152,6 @@ def inference(images1, images2):
         l6 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
         _activation_summary(l6)
 
-    # linear layer(WX + b),
-    # We don't apply softmax here because
-    # tf.nn.sparse_softmax_cross_entropy_with_logits accepts the unscaled logits
-    # and performs the softmax internally for efficiency.
     with tf.variable_scope('layer7_softmax') as scope:
         shape = [500, 2]
         weights = _variable_with_weight_decay('layer7_weights',
@@ -257,18 +168,6 @@ def inference(images1, images2):
 
 
 def loss(logits, labels):
-    """
-    Add L2Loss to all the trainable variables.
-
-    Add summary for "Loss" and "Loss/avg".
-    Args:
-        logits: Logits from inference().
-        labels: Labels from distorted_inputs or inputs(). 1-D tensor
-                of shape [batch_size]
-
-    Returns:
-        Loss tensor of type float.
-    """
     # Calculate the average cross entropy loss across the batch.
     labels = tf.cast(labels, tf.int64)
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -280,19 +179,7 @@ def loss(logits, labels):
     # decay terms (L2 loss).
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
-
 def _add_loss_summaries(total_loss):
-    """
-    Add summaries for losses in VIPeR model.
-
-    Generates moving average for all losses and associated summaries for
-    visualizing the performance of the network.
-
-    Args:
-        total_loss: Total loss from loss().
-    Returns:
-        loss_averages_op: op for generating moving averages of losses.
-    """
     # Compute the moving average of all individual losses and the total loss.
     loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
     losses = tf.get_collection('losses')
@@ -310,19 +197,6 @@ def _add_loss_summaries(total_loss):
 
 
 def train(total_loss, global_step):
-    """
-    Train VIPeR model.
-
-    Create an optimizer and apply to all trainable variables. Add moving
-    average for all trainable variables.
-
-    Args:
-        total_loss: Total loss from loss().
-        global_step: Integer Variable counting the number of training steps
-        processed.
-    Returns:
-        train_op: op for training.
-    """
     # Variables that affect learning rate.
     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
@@ -359,7 +233,6 @@ def train(total_loss, global_step):
     variable_averages = tf.train.ExponentialMovingAverage(
         MOVING_AVERAGE_DECAY, global_step)
     variables_averages_op = variable_averages.apply(tf.trainable_variables())
-
     with tf.control_dependencies([apply_gradient_op, variables_averages_op]):
         train_op = tf.no_op(name='train')
 
